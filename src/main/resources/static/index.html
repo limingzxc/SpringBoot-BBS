@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ch">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Chat Room</title>
+  </head>
+  <body>
+    <form onSubmit="return false;">
+      <h3>BBS聊天室</h3>
+      <textarea id="responseText" style="width: 1024px;height: 300px;"></textarea>
+      <br/>
+      <br />
+      <label>昵称 : </label><input type="text" id="uid" /> &nbsp;
+      <input type="button" value="加入聊天室" onClick="join()" /> &nbsp;
+
+      <input type="button" value="离开聊天室" onClick="exit()" />
+      <br />
+      <br />
+      <label>消息 : </label><input type="text" id="message" /> &nbsp; <input type="button" value="发送消息" onClick="send()" />
+    </form>
+    <script type="text/javascript">
+      const urlPrefix = 'ws://127.0.0.1//chat/';
+      let ws = null;
+      // 加入
+      function join() {
+        const username = document.getElementById('uid').value;
+        if(username !== "") {
+          const url = urlPrefix + username;
+          ws = new WebSocket(url);
+          ws.onmessage = function(event){
+            const ta = document.getElementById('responseText');
+            ta.value += event.data+"\r\n";
+          };
+          ws.onopen = function(event){
+            const ta = document.getElementById('responseText');
+            ta.value += "建立 websocket 连接... \r\n";
+          };
+          ws.onclose = function(event){
+            const ta = document.getElementById('responseText');
+            ta.value += "用户["+username+"] 已经离开聊天室! \r\n";
+            ta.value += "关闭 websocket 连接. \r\n";
+          };
+        }
+        else {
+          alert("清输入昵称");
+        }
+      }
+
+      // 退出
+      function exit() {
+        if(ws) {
+          ws.close();
+        }
+      }
+
+      const message = document.getElementById("message");
+      message.addEventListener("keydown", handleKeydown);
+
+      // 发送消息
+      function send() {
+        const message = document.getElementById('message').value;
+        if(!window.WebSocket){return;}
+        if(ws.readyState === WebSocket.OPEN){
+          ws.send(message);
+          document.getElementById('message').value = "";
+        }else{
+          alert("WebSocket 连接没有建立成功！");
+        }
+      }
+
+      function handleKeydown(event) {
+        if (event.shiftKey && event.keyCode === 13) {
+          document.execCommand('insertLineBreak'); // 换行
+        } else if (event.keyCode === 13) { // 回车键
+          send();
+          return false;
+        }
+      }
+    </script>
+  </body>
+</html>
